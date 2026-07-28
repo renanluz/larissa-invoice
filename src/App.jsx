@@ -6,6 +6,7 @@ import InvoiceForm from './components/InvoiceForm'
 import InvoiceView from './components/InvoiceView'
 import ProfileSettings from './components/ProfileSettings'
 import Registrations from './components/Registrations'
+import QuickStart from './components/QuickStart'
 
 const defaultProfile = {
   name: '', abn: '', email: '', phone: '',
@@ -228,9 +229,33 @@ export default function App() {
 
   const mappedInvoices = invoices.map(mapInvoice)
 
+  if (view === 'quickstart') return (
+    <>
+      <QuickStart
+        invoices={mappedInvoices}
+        clients={clients}
+        nextInvoiceNumber={nextInvoiceNumber()}
+        onSelect={(data) => {
+          if (!data) setView('new')
+          else if (data.editing) setView(data)
+          else setView({ prefill: true, ...data })
+        }}
+        onBack={() => setView(null)}
+      />
+      {toast && <div className="toast">{toast}</div>}
+    </>
+  )
+
   if (view === 'new') return (
     <>
       <InvoiceForm profile={profile} invoiceNumber={nextInvoiceNumber()} clients={clients} itemTemplates={itemTemplates} onSave={saveInvoice} onBack={() => setView(null)} />
+      {toast && <div className="toast">{toast}</div>}
+    </>
+  )
+
+  if (view?.prefill) return (
+    <>
+      <InvoiceForm profile={profile} invoice={view} clients={clients} itemTemplates={itemTemplates} onSave={saveInvoice} onBack={() => setView(null)} />
       {toast && <div className="toast">{toast}</div>}
     </>
   )
@@ -311,7 +336,7 @@ export default function App() {
       </div>
 
       {tab === 'invoices' && (
-        <button className="fab no-print" onClick={() => setView('new')} aria-label="Nova invoice">+</button>
+        <button className="fab no-print" onClick={() => setView('quickstart')} aria-label="Nova invoice">+</button>
       )}
 
       <div className="bottom-nav no-print">
