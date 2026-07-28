@@ -3,14 +3,7 @@ import { useState } from 'react'
 const today = () => new Date().toISOString().split('T')[0]
 const newItem = () => ({ id: Date.now(), desc: '', qty: '1', rate: '' })
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const formatShortDate = (isoDate) => {
-  if (!isoDate) return ''
-  const [y, m, d] = isoDate.split('-')
-  return `${parseInt(d)} ${MONTHS[parseInt(m) - 1]} ${y}`
-}
-
-export default function InvoiceForm({ profile, invoiceNumber, invoice, clients = [], itemTemplates = [], onSave, onBack }) {
+export default function InvoiceForm({ profile, invoiceNumber, invoice, clients = [], onSave, onBack }) {
   const editing = !!invoice?.id
   const [form, setForm] = useState({
     number: invoice?.number || invoiceNumber || '001',
@@ -26,9 +19,6 @@ export default function InvoiceForm({ profile, invoiceNumber, invoice, clients =
     paid: invoice?.paid || false,
   })
 
-  const [pendingTemplate, setPendingTemplate] = useState(null)
-  const [pendingDate, setPendingDate] = useState(today())
-
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const setItem = (id, k, v) => setForm(f => ({ ...f, items: f.items.map(it => it.id === id ? { ...it, [k]: v } : it) }))
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, newItem()] }))
@@ -38,23 +28,6 @@ export default function InvoiceForm({ profile, invoiceNumber, invoice, clients =
     set('clientName', c.name)
     set('clientAddress', c.address || '')
     set('clientEmail', c.email || '')
-  }
-
-  const applyTemplate = (tpl) => {
-    if (tpl.hasDate) {
-      setPendingTemplate(tpl)
-      setPendingDate(form.date || today())
-    } else {
-      setForm(f => ({ ...f, items: [...f.items, { id: Date.now(), desc: tpl.description, qty: '1', rate: tpl.rate ? String(tpl.rate) : '' }] }))
-    }
-  }
-
-  const confirmTemplateDate = () => {
-    const desc = pendingDate
-      ? `${pendingTemplate.description} - ${formatShortDate(pendingDate)}`
-      : pendingTemplate.description
-    setForm(f => ({ ...f, items: [...f.items, { id: Date.now(), desc, qty: '1', rate: pendingTemplate.rate ? String(pendingTemplate.rate) : '' }] }))
-    setPendingTemplate(null)
   }
 
   const subtotal = form.items.reduce((s, it) => s + (parseFloat(it.qty) || 0) * (parseFloat(it.rate) || 0), 0)
@@ -128,46 +101,6 @@ export default function InvoiceForm({ profile, invoiceNumber, invoice, clients =
         {/* Line items */}
         <div className="card">
           <div className="card-title">Serviços</div>
-
-          {itemTemplates.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div className="chip-list">
-                {itemTemplates.map(t => (
-                  <button key={t.id} type="button" className="chip-btn" onClick={() => applyTemplate(t)}>
-                    📌 {t.description}
-                  </button>
-                ))}
-              </div>
-
-              {pendingTemplate && (
-                <div className="line-item-box" style={{ marginTop: 10 }}>
-                  <div className="line-item-num" style={{ marginBottom: 8, display: 'block' }}>
-                    Data do serviço (opcional) — {pendingTemplate.description}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input
-                      className="form-input"
-                      type="date"
-                      value={pendingDate}
-                      onChange={e => setPendingDate(e.target.value)}
-                      style={{ flex: 1 }}
-                    />
-                    {pendingDate && (
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => setPendingDate('')}>
-                        Sem data
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={confirmTemplateDate}>
-                      {pendingDate ? 'Adicionar com data' : 'Adicionar sem data'}
-                    </button>
-                    <button type="button" className="btn btn-outline btn-sm" onClick={() => setPendingTemplate(null)}>✕</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {form.items.map((item, idx) => (
             <div key={item.id} className="line-item-box">
