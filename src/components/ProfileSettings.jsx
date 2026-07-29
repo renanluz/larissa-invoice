@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function ProfileSettings({ profile, onSave }) {
+export default function ProfileSettings({ profile, onSave, onSignOut }) {
   const [form, setForm] = useState({ ...profile })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -57,8 +57,17 @@ export default function ProfileSettings({ profile, onSave }) {
         <strong>💡 Dica:</strong> Como contratante ABN, você emite invoice para cada trabalho. Só precisa de GST se ganhar mais de $75.000/ano.
       </div>
 
-      <button type="submit" className="btn btn-primary" style={{ marginBottom: 40 }}>
+      <button type="submit" className="btn btn-primary" style={{ marginBottom: 12 }}>
         Salvar perfil
+      </button>
+
+      <button
+        type="button"
+        className="btn btn-outline"
+        style={{ marginBottom: 40, color: 'var(--text-muted)' }}
+        onClick={onSignOut}
+      >
+        Sair da conta
       </button>
     </form>
   )

@@ -9,7 +9,7 @@ const fmtDate = (d) => {
 
 const sanitize = (s) => (s || '').replace(/[^a-zA-Z0-9]+/g, '')
 
-export default function InvoiceView({ invoice, profile, onBack, onEdit, onDelete, onMarkPaid }) {
+export default function InvoiceView({ invoice, profile, onBack, onEdit, onDelete, onMarkPaid, onDuplicate }) {
   const subtotal = invoice.items?.reduce((s, it) => s + (parseFloat(it.qty) || 0) * (parseFloat(it.rate) || 0), 0) || 0
   const discount = parseFloat(invoice.discount) || 0
   const shipping = parseFloat(invoice.shipping) || 0
@@ -38,25 +38,34 @@ export default function InvoiceView({ invoice, profile, onBack, onEdit, onDelete
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
-      <div className="header no-print">
-        <button className="back-btn" onClick={onBack}>←</button>
-        <h1>Invoice #{invoice.number}</h1>
+    <div className="subscreen" style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+      {/* Header */}
+      <div className="header no-print" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+          <button className="back-btn" onClick={onBack}>←</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>Invoice #{invoice.number}</div>
+            <div style={{ fontSize: '0.75rem', color: invoice.paid ? 'var(--green)' : 'var(--text-muted)', fontWeight: 700, marginTop: 1 }}>
+              {invoice.paid ? '✓ Paga' : 'Pendente'} · {invoice.clientName}
+            </div>
+          </div>
+          <button
+            style={{
+              background: 'none', border: 'none',
+              color: 'var(--text-muted)', fontSize: '0.78rem',
+              fontWeight: 700, cursor: 'pointer',
+              padding: '6px 10px',
+              fontFamily: 'inherit',
+            }}
+            onClick={() => { if (confirm('Deletar esta invoice?')) onDelete(invoice.id) }}
+          >
+            Deletar
+          </button>
+        </div>
       </div>
 
-      <div className="action-bar no-print">
-        <button className="btn btn-sm btn-outline" onClick={() => onEdit(invoice)}>✏️ Editar</button>
-        <button
-          className={`btn btn-sm ${invoice.paid ? 'btn-outline' : 'btn-success'}`}
-          onClick={() => onMarkPaid(invoice.id)}
-        >
-          {invoice.paid ? '↩ Pendente' : '✓ Marcar paga'}
-        </button>
-        <button className="btn btn-sm btn-outline" onClick={handlePrint}>🖨️ PDF</button>
-        <button className="btn btn-sm btn-ghost" onClick={handleShare}>📤 Enviar</button>
-      </div>
-
-      <div className="content">
+      {/* Preview */}
+      <div className="content" style={{ paddingBottom: 120 }}>
         <div className="invoice-preview">
           {/* Contact strip */}
           <div className="inv-contact-strip">
@@ -146,13 +155,49 @@ export default function InvoiceView({ invoice, profile, onBack, onEdit, onDelete
 
           <div style={{ height: 22 }} />
         </div>
+      </div>
 
-        {/* Delete */}
-        <div className="no-print" style={{ marginTop: 16, marginBottom: 40 }}>
-          <button className="btn btn-danger" onClick={() => {
-            if (confirm('Deletar esta invoice?')) onDelete(invoice.id)
-          }}>
-            🗑️ Deletar invoice
+      {/* Bottom action bar */}
+      <div className="invoice-action-bar no-print">
+        {/* Top row: secondary actions */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <button
+            className="btn btn-outline btn-sm"
+            style={{ flex: 1 }}
+            onClick={handlePrint}
+          >
+            ↓ Baixar PDF
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            style={{ flex: 1 }}
+            onClick={() => onDuplicate(invoice)}
+          >
+            ⧉ Duplicar
+          </button>
+          <button
+            className={`btn btn-sm ${invoice.paid ? 'btn-outline' : 'btn-success'}`}
+            style={{ flex: 1 }}
+            onClick={() => onMarkPaid(invoice.id)}
+          >
+            {invoice.paid ? '↩ Pendente' : '✓ Paga'}
+          </button>
+        </div>
+        {/* Primary CTA */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1 }}
+            onClick={handleShare}
+          >
+            Enviar cobrança
+          </button>
+          <button
+            className="btn btn-outline btn-sm"
+            style={{ width: 48, flexShrink: 0 }}
+            onClick={() => onEdit(invoice)}
+          >
+            ✏️
           </button>
         </div>
       </div>

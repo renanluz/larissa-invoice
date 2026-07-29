@@ -41,7 +41,7 @@ export default function InvoiceForm({ profile, invoiceNumber, invoice, clients =
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+    <div className="subscreen" style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       <div className="header">
         <button className="back-btn" onClick={onBack}>←</button>
         <h1>{editing ? 'Editar Invoice' : 'Nova Invoice'}</h1>

@@ -24,42 +24,53 @@ export default function Login() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      background: 'linear-gradient(160deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+      background: '#14181F',
     }}>
-      {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{
           width: 72, height: 72,
-          background: 'rgba(255,255,255,0.15)',
-          backdropFilter: 'blur(10px)',
+          background: '#D4462E',
           borderRadius: 20,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '2rem',
-          margin: '0 auto 16px',
-          border: '1px solid rgba(255,255,255,0.2)',
-        }}>🧹</div>
-        <div style={{ color: 'white', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
+          fontSize: '2.2rem',
+          margin: '0 auto 20px',
+          fontFamily: 'Instrument Serif, serif',
+          color: 'white',
+          fontWeight: 400,
+        }}>L</div>
+        <div style={{
+          color: '#F7F5F1',
+          fontFamily: 'Instrument Serif, serif',
+          fontSize: '1.9rem',
+          letterSpacing: '-0.01em',
+        }}>
           Larissa Invoices
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', marginTop: 4 }}>
+        <div style={{ color: '#8A857C', fontSize: '0.875rem', marginTop: 6, fontWeight: 600 }}>
           Área restrita
         </div>
       </div>
 
-      {/* Card */}
       <div style={{
-        background: 'white',
+        background: '#1E2330',
         borderRadius: 20,
         padding: '28px 24px',
         width: '100%',
         maxWidth: 360,
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        border: '1px solid #2A3040',
       }}>
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#8A857C', marginBottom: 6 }}>Email</label>
             <input
-              className="form-input"
+              style={{
+                width: '100%', padding: '13px 14px',
+                border: '1.5px solid #2A3040',
+                borderRadius: 12, fontSize: 15,
+                fontFamily: 'inherit',
+                background: '#14181F', color: '#F7F5F1',
+                outline: 'none',
+              }}
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -69,9 +80,16 @@ export default function Login() {
             />
           </div>
           <div className="form-group" style={{ marginBottom: error ? 12 : 20 }}>
-            <label className="form-label">Senha</label>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#8A857C', marginBottom: 6 }}>Senha</label>
             <input
-              className="form-input"
+              style={{
+                width: '100%', padding: '13px 14px',
+                border: '1.5px solid #2A3040',
+                borderRadius: 12, fontSize: 15,
+                fontFamily: 'inherit',
+                background: '#14181F', color: '#F7F5F1',
+                outline: 'none',
+              }}
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -83,9 +101,9 @@ export default function Login() {
 
           {error && (
             <div style={{
-              background: '#fee2e2', color: '#dc2626',
+              background: '#FBE9E5', color: '#D4462E',
               padding: '10px 14px', borderRadius: 8,
-              fontSize: '0.85rem', fontWeight: 500,
+              fontSize: '0.85rem', fontWeight: 600,
               marginBottom: 16,
             }}>
               {error}
@@ -94,9 +112,16 @@ export default function Login() {
 
           <button
             type="submit"
-            className="btn btn-primary"
+            style={{
+              width: '100%', padding: '15px 20px',
+              background: '#D4462E', color: 'white',
+              border: 'none', borderRadius: 12,
+              fontSize: '0.95rem', fontFamily: 'inherit',
+              fontWeight: 700, cursor: 'pointer',
+              opacity: loading ? 0.7 : 1,
+              boxShadow: '0 6px 18px rgba(212,70,46,0.4)',
+            }}
             disabled={loading}
-            style={{ opacity: loading ? 0.7 : 1 }}
           >
             {loading ? 'Entrando…' : 'Entrar'}
           </button>

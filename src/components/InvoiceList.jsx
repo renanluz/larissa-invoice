@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const fmt = (n) => `$${Number(n).toFixed(2)}`
 
 const fmtDate = (d) => {
@@ -14,9 +16,20 @@ const initials = (name) => {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
+const isOverdue = (inv) => {
+  if (inv.paid || !inv.dueDate) return false
+  return inv.dueDate < new Date().toISOString().split('T')[0]
+}
+
 export default function InvoiceList({ invoices, onSelect }) {
-  const pending = invoices.filter(i => !i.paid)
-  const paid = invoices.filter(i => i.paid)
+  const [filter, setFilter] = useState('all')
+
+  const pendingInvoices = invoices.filter(i => !i.paid)
+  const paidInvoices = invoices.filter(i => i.paid)
+
+  const visible = filter === 'pending' ? pendingInvoices
+    : filter === 'paid' ? paidInvoices
+    : invoices
 
   if (invoices.length === 0) {
     return (
@@ -30,22 +43,33 @@ export default function InvoiceList({ invoices, onSelect }) {
 
   return (
     <>
-      {pending.length > 0 && (
-        <>
-          <div className="section-header">
-            <span className="section-label">Pendentes · {pending.length}</span>
-          </div>
-          {pending.map(inv => <InvoiceRow key={inv.id} inv={inv} onClick={() => onSelect(inv)} />)}
-        </>
-      )}
+      <div className="filter-pills">
+        <button
+          className={`filter-pill ${filter === 'all' ? 'active' : ''}`}
+          onClick={() => setFilter('all')}
+        >
+          Todas · {invoices.length}
+        </button>
+        <button
+          className={`filter-pill ${filter === 'pending' ? 'active' : ''}`}
+          onClick={() => setFilter('pending')}
+        >
+          Pendentes · {pendingInvoices.length}
+        </button>
+        <button
+          className={`filter-pill ${filter === 'paid' ? 'active' : ''}`}
+          onClick={() => setFilter('paid')}
+        >
+          Pagas · {paidInvoices.length}
+        </button>
+      </div>
 
-      {paid.length > 0 && (
-        <div style={{ marginTop: pending.length ? 20 : 0 }}>
-          <div className="section-header">
-            <span className="section-label">Pagas · {paid.length}</span>
-          </div>
-          {paid.map(inv => <InvoiceRow key={inv.id} inv={inv} onClick={() => onSelect(inv)} />)}
+      {visible.length === 0 ? (
+        <div className="empty-state" style={{ paddingTop: 40 }}>
+          <div className="empty-sub">Nenhuma invoice nessa categoria</div>
         </div>
+      ) : (
+        visible.map(inv => <InvoiceRow key={inv.id} inv={inv} onClick={() => onSelect(inv)} />)
       )}
     </>
   )
@@ -53,22 +77,23 @@ export default function InvoiceList({ invoices, onSelect }) {
 
 function InvoiceRow({ inv, onClick }) {
   const total = totalAmount(inv)
+  const overdue = isOverdue(inv)
   return (
-    <div className="invoice-item" onClick={onClick}>
-      <div className="invoice-item-left">
-        <div className={`invoice-avatar ${inv.paid ? 'paid' : ''}`}>
-          {initials(inv.clientName)}
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div className="invoice-client">{inv.clientName || 'Sem nome'}</div>
-          <div className="invoice-meta">#{inv.number} · {fmtDate(inv.date)}</div>
+    <div className={`invoice-item ${overdue ? 'overdue' : ''}`} onClick={onClick}>
+      <div className={`invoice-avatar ${inv.paid ? 'paid' : overdue ? 'overdue' : ''}`}>
+        {initials(inv.clientName)}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="invoice-client">{inv.clientName || 'Sem nome'}</div>
+        <div className={`invoice-meta ${overdue ? 'overdue' : ''}`}>
+          #{inv.number} · {overdue ? `Venceu ${fmtDate(inv.dueDate)}` : fmtDate(inv.date)}
         </div>
       </div>
-      <div className="invoice-right">
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <div className="invoice-amount">{fmt(total)}</div>
-        <span className={`badge ${inv.paid ? 'badge-paid' : 'badge-pending'}`}>
-          {inv.paid ? 'Paga' : 'Pendente'}
-        </span>
+        <div className="invoice-service-count">
+          {inv.items?.length || 0} {(inv.items?.length || 0) === 1 ? 'item' : 'itens'}
+        </div>
       </div>
     </div>
   )

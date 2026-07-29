@@ -15,8 +15,46 @@ const defaultProfile = {
 
 const mapTemplate = (t) => ({ id: t.id, description: t.description, rate: t.rate, hasDate: t.has_date })
 
+const toISO = (d) => d.toISOString().split('T')[0]
+
+const PT_DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+const PT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+const todayLabel = () => {
+  const d = new Date()
+  return `${PT_DAYS[d.getDay()]}, ${d.getDate()} ${PT_MONTHS[d.getMonth()]}`
+}
+
+function IconInvoices() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="2" width="13" height="18" rx="2.5" stroke="currentColor" strokeWidth="2"/>
+      <path d="M6 7h7M6 11h7M6 15h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconClientes() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="11" cy="8" r="3.5" stroke="currentColor" strokeWidth="2"/>
+      <path d="M3.5 19c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconPerfil() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="11" cy="11" r="8.5" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="11" cy="9" r="3" stroke="currentColor" strokeWidth="2"/>
+      <path d="M4.5 18.5c1-3 3.5-5 6.5-5s5.5 2 6.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
 export default function App() {
-  const [session, setSession] = useState(undefined) // undefined = loading
+  const [session, setSession] = useState(undefined)
   const [tab, setTab] = useState('invoices')
   const [invoices, setInvoices] = useState([])
   const [profile, setProfile] = useState(defaultProfile)
@@ -26,14 +64,12 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [loadingData, setLoadingData] = useState(false)
 
-  // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
-  // Load data when logged in
   useEffect(() => {
     if (session) fetchAll()
   }, [session])
@@ -80,7 +116,6 @@ export default function App() {
     if (!error) { setProfile(p); showToast('Perfil salvo!') }
   }
 
-  // Clients CRUD
   const saveClient = async (client) => {
     const payload = { user_id: session.user.id, name: client.name, address: client.address || null, email: client.email || null }
     if (client.id) {
@@ -116,7 +151,6 @@ export default function App() {
     if (!error && data) setClients(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
   }
 
-  // Item templates CRUD
   const saveItemTemplate = async (tpl) => {
     const payload = { user_id: session.user.id, description: tpl.description, rate: tpl.rate || null, has_date: !!tpl.hasDate }
     if (tpl.id) {
@@ -199,7 +233,6 @@ export default function App() {
     return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, '0')
   }
 
-  // Map DB row to app format
   const mapInvoice = (i) => ({
     id: i.id,
     number: i.number,
@@ -215,16 +248,27 @@ export default function App() {
     paid: i.paid,
   })
 
+  const duplicateInvoice = (inv) => {
+    setView({
+      prefill: true,
+      ...inv,
+      id: undefined,
+      number: nextInvoiceNumber(),
+      date: toISO(new Date()),
+      paid: false,
+    })
+    showToast('Invoice duplicada')
+  }
+
   // Loading auth
   if (session === undefined) {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #6366f1, #a855f7)' }}>
-        <div style={{ color: 'white', fontSize: '1.5rem' }}>🧹</div>
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark)' }}>
+        <div style={{ color: 'white', fontSize: '1.5rem', fontFamily: 'Instrument Serif, serif' }}>L</div>
       </div>
     )
   }
 
-  // Not logged in
   if (!session) return <Login />
 
   const mappedInvoices = invoices.map(mapInvoice)
@@ -276,6 +320,7 @@ export default function App() {
         onEdit={(inv) => setView({ ...inv, editing: true })}
         onDelete={deleteInvoice}
         onMarkPaid={markPaid}
+        onDuplicate={duplicateInvoice}
       />
       {toast && <div className="toast">{toast}</div>}
     </>
@@ -287,34 +332,38 @@ export default function App() {
   const totalPaid = paid.reduce((s, i) => s + (i.items?.reduce((a, it) => a + (parseFloat(it.qty)||0)*(parseFloat(it.rate)||0), 0) || 0), 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
-      {/* Hero */}
-      <div className="hero">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="hero-greeting">Olá 👋</div>
-            <div className="hero-name">{profile.name || 'Larissa'}</div>
+    <div className="app-root" style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+      {tab === 'invoices' ? (
+        <div className="hero no-print">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="hero-date">{todayLabel()}</div>
+              <div className="hero-name">Oi, {profile.name.split(' ')[0] || 'Larissa'} 👋</div>
+            </div>
+            <div className="hero-avatar">{(profile.name || 'L')[0].toUpperCase()}</div>
           </div>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: 10, padding: '7px 12px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            Sair
-          </button>
-        </div>
-        <div className="hero-stats" style={{ marginTop: 20 }}>
-          <div className="hero-stat">
-            <div className="hero-stat-label">Pendente</div>
-            <div className="hero-stat-value">${totalPending.toFixed(2)}</div>
-            <div className="hero-stat-sub">{pending.length} invoice{pending.length !== 1 ? 's' : ''}</div>
+          <div className="hero-label">PENDENTE</div>
+          <div className="hero-amount">
+            <span>$</span>{totalPending.toFixed(2)}
           </div>
-          <div className="hero-stat">
-            <div className="hero-stat-label">Recebido</div>
-            <div className="hero-stat-value">${totalPaid.toFixed(2)}</div>
-            <div className="hero-stat-sub">{paid.length} paga{paid.length !== 1 ? 's' : ''}</div>
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <div className="hero-stat-label">Pendentes</div>
+              <div className="hero-stat-value">{pending.length} invoice{pending.length !== 1 ? 's' : ''}</div>
+            </div>
+            <div className="hero-stat">
+              <div className="hero-stat-label">Recebido</div>
+              <div className="hero-stat-value">${totalPaid.toFixed(2)}</div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="page-header no-print">
+          <div className="page-header-title">
+            {tab === 'cadastros' ? 'Clientes' : 'Perfil'}
+          </div>
+        </div>
+      )}
 
       <div className="content" style={{ flex: 1 }}>
         {loadingData ? (
@@ -331,7 +380,11 @@ export default function App() {
             onDeleteTemplate={deleteItemTemplate}
           />
         ) : (
-          <ProfileSettings profile={profile} onSave={saveProfile} />
+          <ProfileSettings
+            profile={profile}
+            onSave={saveProfile}
+            onSignOut={() => supabase.auth.signOut()}
+          />
         )}
       </div>
 
@@ -339,20 +392,27 @@ export default function App() {
         <button className="fab no-print" onClick={() => setView('quickstart')} aria-label="Nova invoice">+</button>
       )}
 
-      <div className="bottom-nav no-print">
+      <nav className="bottom-nav no-print">
+        <div className="nav-logo" style={{ display: 'none' }}>
+          <div className="nav-logo-icon">L</div>
+          <div>
+            <div className="nav-logo-name">Larissa</div>
+            <div className="nav-logo-sub">Invoices</div>
+          </div>
+        </div>
         <button className={`bottom-tab ${tab === 'invoices' ? 'active' : ''}`} onClick={() => setTab('invoices')}>
-          <span className="bottom-tab-icon">📄</span>
+          <IconInvoices />
           Invoices
         </button>
         <button className={`bottom-tab ${tab === 'cadastros' ? 'active' : ''}`} onClick={() => setTab('cadastros')}>
-          <span className="bottom-tab-icon">📇</span>
-          Cadastros
+          <IconClientes />
+          Clientes
         </button>
         <button className={`bottom-tab ${tab === 'profile' ? 'active' : ''}`} onClick={() => setTab('profile')}>
-          <span className="bottom-tab-icon">👤</span>
+          <IconPerfil />
           Perfil
         </button>
-      </div>
+      </nav>
 
       {toast && <div className="toast">{toast}</div>}
     </div>
